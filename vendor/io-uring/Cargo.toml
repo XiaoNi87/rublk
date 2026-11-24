@@ -1,0 +1,58 @@
+# Vendored dependency manifest; see ../README.md for source and local changes.
+
+[package]
+edition = "2021"
+rust-version = "1.63"
+name = "io-uring"
+version = "0.7.12"
+authors = ["quininer <quininer@live.com>"]
+build = "build.rs"
+autolib = false
+autobins = false
+autoexamples = false
+autotests = false
+autobenches = false
+description = "The low-level `io_uring` userspace interface for Rust"
+homepage = "https://github.com/tokio-rs/io-uring"
+documentation = "https://docs.rs/io-uring"
+readme = "README.md"
+categories = [
+    "asynchronous",
+    "network-programming",
+    "filesystem",
+]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/tokio-rs/io-uring"
+
+[features]
+raid5-bpf = []
+direct-syscall = ["sc"]
+io_safety = []
+overwrite = ["bindgen"]
+
+[lib]
+name = "io_uring"
+path = "src/lib.rs"
+
+
+
+[dependencies.bitflags]
+version = "2"
+
+[dependencies.cfg-if]
+version = "1"
+
+[dependencies.libc]
+version = "0.2.98"
+default-features = false
+
+[dependencies.sc]
+version = "0.2"
+optional = true
+
+
+
+
+[build-dependencies.bindgen]
+version = "0.69"
+optional = true
