@@ -899,8 +899,7 @@ dependencies = [
 [[package]]
 name = "io-uring"
 version = "0.7.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4d09b98f7eace8982db770e4408e7470b028ce513ac28fecdc6bf4c30fe92b62"
+source = "git+https://github.com/XiaoNi87/io-uring.git?rev=18c637802eea403498c36df74ff54ff96584d795#18c637802eea403498c36df74ff54ff96584d795"
 dependencies = [
  "bindgen 0.69.5",
  "bitflags 2.8.0",
@@ -984,8 +983,7 @@ dependencies = [
 [[package]]
 name = "libublk"
 version = "0.4.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "25d2e91aa5046a25e8aeef80f75d33e77645fc812e3cdf82f83678b89b47c028"
+source = "git+https://github.com/XiaoNi87/libublk-rs.git?rev=7069ae7affd7dd5cbdda7fc0b903e7e4a6bff869#7069ae7affd7dd5cbdda7fc0b903e7e4a6bff869"
 dependencies = [
  "async-lock",
  "bitflags 2.8.0",

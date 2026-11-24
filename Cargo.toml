@@ -55,3 +55,7 @@ vram = ["opencl3"]
 tempfile = "3.6.0"
 regex = "1.8.4"
 ctor = "0.5"
+
+[patch.crates-io]
+io-uring = { git = "https://github.com/XiaoNi87/io-uring.git", rev = "18c637802eea403498c36df74ff54ff96584d795" }
+libublk = { git = "https://github.com/XiaoNi87/libublk-rs.git", rev = "7069ae7affd7dd5cbdda7fc0b903e7e4a6bff869" }
