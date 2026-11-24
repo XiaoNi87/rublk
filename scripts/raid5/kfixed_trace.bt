@@ -1,0 +1,8 @@
+BEGIN { @regfail = sum(0); @regok = sum(0); @bpf = sum(0); @copy = sum(0); @user = sum(0); @kfixed = sum(0); @destroy = sum(0); }
+kretprobe:io_buffer_register_request /(int32)retval < 0/ { @regfail = sum(1); }
+kretprobe:io_buffer_register_request /retval == 0/ { @regok = sum(1); }
+kprobe:io_uring_bpf_issue { @bpf = sum(1); }
+kprobe:ublk_copy_user_pages.isra.0 { @copy = sum(1); }
+kprobe:bpf_iter_uring_buf_new /(*(uint8 *)arg2) == 0/ { @user = sum(1); }
+kprobe:bpf_iter_uring_buf_new /(*(uint8 *)arg2) == 3/ { @kfixed = sum(1); }
+kprobe:bpf_iter_uring_buf_destroy { @destroy = sum(1); }
