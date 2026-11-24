@@ -16,6 +16,7 @@ maintenance = { status = "actively-developed" }
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+libbpf-rs = { version = "=0.27.2", optional = true }
 qcow2-rs = "0.1"
 libublk = "0.4.7"
 clap = { version = "4.3", features = ["derive"] }
@@ -50,8 +51,53 @@ ctrlc = "3.4"
 default = ["vram"]
 compress = ["rocksdb", "bincode"]
 vram = ["opencl3"]
+raid5-metrics = ["raid5"]
+raid5 = ["libublk/raid5-bpf", "io-uring/raid5-bpf", "dep:libbpf-rs", "dep:libbpf-cargo"]
 
 [dev-dependencies]
 tempfile = "3.6.0"
 regex = "1.8.4"
 ctor = "0.5"
+
+[patch.crates-io]
+libublk = { path = "vendor/libublk" }
+io-uring = { path = "vendor/io-uring" }
+
+[build-dependencies]
+libbpf-cargo = { version = "=0.27.2", optional = true }
+
+[[example]]
+name = "raid5_bpf_probe"
+required-features = ["raid5"]
+
+[[example]]
+name = "raid5_kfixed_probe"
+required-features = ["raid5"]
+
+[[example]]
+name = "raid5_recovery_probe"
+required-features = ["raid5"]
+
+[[example]]
+name = "raid5_xor_probe"
+required-features = ["raid5"]
+
+[[example]]
+name = "raid5_arena_probe"
+required-features = ["raid5"]
+
+[[example]]
+name = "raid5_file_fence_probe"
+required-features = ["raid5"]
+
+[[example]]
+name = "raid5_adoption_probe"
+required-features = ["raid5"]
+
+[[example]]
+name = "raid5_coord_bench"
+required-features = ["raid5-metrics"]
+
+[[example]]
+name = "raid5_metadata_process"
+required-features = ["raid5"]

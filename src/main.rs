@@ -25,6 +25,8 @@ mod null;
 #[cfg(feature = "vram")]
 mod opencl;
 mod qcow2;
+#[cfg(feature = "raid5")]
+mod raid5_cli;
 #[cfg(feature = "vram")]
 mod vram;
 mod zoned;
@@ -185,6 +187,8 @@ fn ublk_state_wait_until(ctrl: &mut UblkCtrl, state: u32, timeout: u32) -> anyho
 
 fn ublk_parse_add_args(opt: &args::AddCommands) -> (&'static str, &args::GenAddArgs) {
     match opt {
+        #[cfg(feature = "raid5")]
+        AddCommands::Raid5(_opt) => ("raid5", &_opt.gen_arg),
         AddCommands::Loop(_opt) => ("loop", &_opt.gen_arg),
         AddCommands::Null(_opt) => ("null", &_opt.gen_arg),
         AddCommands::Zoned(_opt) => ("zoned", &_opt.gen_arg),
@@ -198,6 +202,10 @@ fn ublk_parse_add_args(opt: &args::AddCommands) -> (&'static str, &args::GenAddA
 
 fn ublk_add_worker(opt: args::AddCommands, comm: &Arc<DevIdComm>) -> anyhow::Result<i32> {
     let (tgt_type, gen_arg) = ublk_parse_add_args(&opt);
+    #[cfg(feature = "raid5")]
+    if let AddCommands::Raid5(args) = &opt {
+        raid5_cli::validate(args)?;
+    }
     let ctrl = gen_arg.new_ublk_ctrl(tgt_type, UblkFlags::UBLK_DEV_F_ADD_DEV)?;
 
     // Validate mlock compatibility early
@@ -207,6 +215,8 @@ fn ublk_add_worker(opt: args::AddCommands, comm: &Arc<DevIdComm>) -> anyhow::Res
     }
 
     match opt {
+        #[cfg(feature = "raid5")]
+        AddCommands::Raid5(opt) => raid5_cli::run(ctrl, Some(opt), comm),
         AddCommands::Loop(opt) => r#loop::ublk_add_loop(ctrl, Some(opt), comm),
         AddCommands::Null(opt) => null::ublk_add_null(ctrl, Some(opt), comm),
         AddCommands::Zoned(opt) => zoned::ublk_add_zoned(ctrl, Some(opt), comm),
@@ -263,9 +273,18 @@ fn ublk_recover_work(opt: args::UblkArgs) -> anyhow::Result<i32> {
     }
 
     let comm = Arc::new(DevIdComm::new(false).expect("Create eventfd failed"));
+    let tgt_type = ctrl.get_target_type_from_json()?;
+    #[cfg(feature = "raid5")]
+    if tgt_type == "raid5" {
+        let result = ctrl.try_start_user_recover()?;
+        anyhow::ensure!(result == 0, "RAID5 takeover refused: {result}");
+    }
+    #[cfg(feature = "raid5")]
+    if tgt_type != "raid5" {
+        ctrl.start_user_recover()?;
+    }
+    #[cfg(not(feature = "raid5"))]
     ctrl.start_user_recover()?;
-
-    let tgt_type = ctrl.get_target_type_from_json().unwrap();
 
     // Extract device info and target flags to restore original configuration
     let dev_info = ctrl.dev_info();
@@ -287,6 +306,8 @@ fn ublk_recover_work(opt: args::UblkArgs) -> anyhow::Result<i32> {
         .unwrap();
 
     match tgt_type.as_str() {
+        #[cfg(feature = "raid5")]
+        "raid5" => raid5_cli::run(ctrl, None, &comm),
         "loop" => r#loop::ublk_add_loop(ctrl, None, &comm),
         "null" => null::ublk_add_null(ctrl, None, &comm),
         "zoned" => zoned::ublk_add_zoned(ctrl, None, &comm),
@@ -301,7 +322,12 @@ fn ublk_recover_work(opt: args::UblkArgs) -> anyhow::Result<i32> {
     }
 }
 
-fn ublk_recover(opt: args::UblkArgs) -> anyhow::Result<i32> {
+fn ublk_recover(opt: args::RecoverArgs) -> anyhow::Result<i32> {
+    let foreground = opt.foreground;
+    let opt = opt.device;
+    if foreground {
+        return ublk_recover_work(opt);
+    }
     let daemonize = daemonize::Daemonize::new()
         .stdout(daemonize::Stdio::devnull())
         .stderr(daemonize::Stdio::devnull());
@@ -448,6 +474,8 @@ fn main() {
     }
 
     match cli.command {
+        #[cfg(feature = "raid5")]
+        Commands::Raid5Sync(opt) => raid5_cli::sync_command(opt).unwrap(),
         Commands::Add(opt) => {
             ublk_add(opt).expect("Fail to add ublk, pass --foreground for getting detailed error\n")
         }
