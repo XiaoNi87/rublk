@@ -1,0 +1,9 @@
+// Diagnostic only: original FSYNC submit-to-completion wall time, not CPU time.
+tracepoint:io_uring:io_uring_submit_req /comm == "rublk" && args.opcode == 3/ {
+ @start[(uint64)args.req]=nsecs;
+ printf("FSYNC_SUBMIT %llu %d %llu %llu\n",nsecs,pid,(uint64)args.ctx,(uint64)args.req);
+}
+tracepoint:io_uring:io_uring_complete /@start[(uint64)args.req]/ {
+ printf("FSYNC_COMPLETE %llu %llu %llu %d\n",nsecs,(uint64)args.ctx,nsecs-@start[(uint64)args.req],args.res);
+ delete(@start[(uint64)args.req]);
+}
