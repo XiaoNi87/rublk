@@ -1,0 +1,58 @@
+BEGIN { @regfail = sum(0); @regok = sum(0); @bpf = sum(0); @copy = sum(0); @user = sum(0); @kfixed = sum(0); @destroy = sum(0); }
+kretprobe:io_buffer_register_request /(int32)retval < 0/ { @regfail = sum(1); }
+kretprobe:io_buffer_register_request /retval == 0/ { @regok = sum(1); }
+kprobe:io_uring_bpf_issue { @bpf = sum(1); }
+kprobe:ublk_copy_user_pages.isra.0 { @copy = sum(1); }
+kprobe:bpf_iter_uring_buf_new /(*(uint8 *)arg2) == 0/ { @user = sum(1); }
+kprobe:bpf_iter_uring_buf_new /(*(uint8 *)arg2) == 3/ { @kfixed = sum(1); }
+kprobe:bpf_iter_uring_buf_destroy { @destroy = sum(1); }
+
+tracepoint:io_uring:io_uring_submit_req {
+ @ring_opcodes[pid,tid,(uint64)args.ctx,args.opcode] = count();
+ @ring_owners[pid,tid,(uint64)args.ctx] = count();
+}
+kprobe:io_uring_bpf_issue {
+ @issue_start[tid] = nsecs;
+ @issue_ring[tid] = (uint64)((struct io_kiocb *)arg0)->ctx;
+}
+kretprobe:io_uring_bpf_issue /@issue_start[tid]/ {
+ @bpf_issue_wall_ns[@issue_ring[tid]] = hist(nsecs - @issue_start[tid]);
+ delete(@issue_start[tid]);delete(@issue_ring[tid]);
+}
+// Bounded samples: ring context + buffer/tag index + original request offset.
+// Context addresses are trace-local identities, not persistent ring IDs.
+kprobe:io_prep_read_fixed,kprobe:io_prep_write_fixed {
+ $r=(struct io_kiocb *)arg0;$s=(struct io_uring_sqe *)arg1;
+ $ctx=(uint64)$r->ctx;
+ if (@fixed_sample_count[pid,$ctx] < 64) {
+  @fixed_sample_count[pid,$ctx] = @fixed_sample_count[pid,$ctx] + 1;
+  @fixed_samples[pid,tid,$ctx,$s->opcode,$s->buf_index,$s->addr,$s->len,$s->off] = count();
+ }
+}
+kprobe:bpf_iter_uring_buf_new /@issue_ring[tid]/ {
+ $ctx=@issue_ring[tid];$d=(struct io_bpf_buf_desc *)arg2;
+ if (@desc_sample_count[pid,$ctx] < 64) {
+  @desc_sample_count[pid,$ctx] = @desc_sample_count[pid,$ctx] + 1;
+  @iterator_samples[pid,tid,$ctx,$d->type,$d->buf_index,$d->addr,$d->len] = count();
+ }
+}
+
+// Registration samples correlate the kernel request/tag with its original ring.
+// request addresses can be reused; this is bounded evidence, not a BIO journal.
+kprobe:io_buffer_register_request {
+ $rq=(struct request *)arg1;
+ if (@registration_count[pid] < 64) {
+  @registration_count[pid]=@registration_count[pid]+1;
+  @registration_samples[pid,tid,(uint64)arg1,arg3,$rq->__sector,$rq->__data_len]=count();
+ }
+}
+
+// Ordinary USER read-back and arena-output writes are intentionally separate
+// from fixed request-page I/O. Their userspace addresses are sampled here.
+kprobe:io_prep_read,kprobe:io_prep_write {
+ $r=(struct io_kiocb *)arg0;$s=(struct io_uring_sqe *)arg1;$ctx=(uint64)$r->ctx;
+ if (@ordinary_sample_count[pid,$ctx] < 64) {
+  @ordinary_sample_count[pid,$ctx]=@ordinary_sample_count[pid,$ctx]+1;
+  @ordinary_samples[pid,tid,$ctx,$s->opcode,$s->addr,$s->len,$s->off]=count();
+ }
+}

@@ -1,3 +1,5 @@
+> **Experimental RAID5 branch:** see [RAID5 prototype](RAID5_README.md) for status, dependencies and limitations.
+
 # rublk
 
 [![License: GPL v2](https://img.shields.io/badge/License-GPL_v2-blue.svg)] (https://github.com/ming1/rublk/blob/master/COPYING)

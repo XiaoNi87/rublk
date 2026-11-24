@@ -1,0 +1,25 @@
+// Diagnostic only: kernel BPF iterator calls per issue, not distinct BIO counts.
+BEGIN { @origin = nsecs; @copy = sum(0); }
+tracepoint:io_uring:io_uring_submit_req /args.opcode == 46/ {
+ @cmd_ring[pid,(uint64)args.ctx] = count();
+}
+// In pinned kernel cmd_to_io_kiocb(cmd) returns cmd itself (union offset zero).
+kprobe:ublk_ch_uring_cmd_local {
+ @data_ring[pid,(uint64)((struct io_kiocb *)arg0)->ctx]=count();
+}
+kprobe:io_uring_bpf_issue {
+ @ctx[tid]=(uint64)((struct io_kiocb *)arg0)->ctx;
+ @start[tid]=nsecs; @users[tid]=0; @fixed[tid]=0;
+}
+kprobe:bpf_iter_uring_buf_new /@ctx[tid]/ {
+ $type=*(uint8 *)arg2;
+ if ($type==0) { @users[tid]=@users[tid]+1; }
+ if ($type==3) { @fixed[tid]=@fixed[tid]+1; }
+}
+kretprobe:io_uring_bpf_issue /@ctx[tid]/ {
+ $bucket=(nsecs-@origin)/1000000000;
+ @paths[$bucket,pid,tid,@ctx[tid],@users[tid],@fixed[tid],(int32)retval]=count();
+ @wall[$bucket,pid,tid,@ctx[tid],@users[tid],@fixed[tid],(int32)retval]=max(nsecs-@start[tid]);
+ delete(@ctx[tid]);delete(@start[tid]);delete(@users[tid]);delete(@fixed[tid]);
+}
+kprobe:ublk_copy_user_pages.isra.0 { @copy=sum(1); }
