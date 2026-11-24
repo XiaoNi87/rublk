@@ -176,13 +176,20 @@ impl GenAddArgs {
         }
 
         if self.zero_copy {
-            if name != "loop" && name != "null" {
+            if name != "loop" && name != "null" && name != "raid5" {
                 anyhow::bail!("Target {} doesn't support zero copy", name);
             }
             ctrl_flags |=
                 libublk::sys::UBLK_F_SUPPORT_ZERO_COPY | libublk::sys::UBLK_F_AUTO_BUF_REG;
         }
 
+        #[cfg(feature = "raid5")]
+        if name == "raid5" {
+            if !self.zero_copy || self.user_copy || self.unprivileged {
+                anyhow::bail!("raid5 requires privileged --zero-copy without --user-copy");
+            }
+            ctrl_flags |= libublk::sys::UBLK_F_USER_RECOVERY;
+        }
         if self.user_copy {
             ctrl_flags |= libublk::sys::UBLK_F_USER_COPY;
         }
@@ -285,6 +292,10 @@ pub(crate) struct UblkFeaturesArgs {}
 
 #[derive(Subcommand)]
 pub(crate) enum AddCommands {
+    /// Add BPF zero-copy RAID5 target
+    #[cfg(feature = "raid5")]
+    Raid5(super::raid5_cli::Raid5Args),
+
     /// Add loop target
     Loop(super::r#loop::LoopArgs),
 
@@ -306,8 +317,20 @@ pub(crate) enum AddCommands {
     Vram(super::vram::VramAddArgs),
 }
 
+#[derive(clap::Args)]
+pub(crate) struct RecoverArgs {
+    #[command(flatten)]
+    pub device: UblkArgs,
+    /// Keep recovery worker in the foreground for service managers/diagnostics
+    #[arg(long)]
+    pub foreground: bool,
+}
+
 #[derive(Subcommand)]
 pub(crate) enum Commands {
+    /// Inspect/control RAID5 full-sync (root only)
+    #[cfg(feature = "raid5")]
+    Raid5Sync(super::raid5_cli::SyncArgs),
     /// Adds ublk target
     #[clap(subcommand)]
     Add(AddCommands),
@@ -316,7 +339,7 @@ pub(crate) enum Commands {
     /// Lists ublk targets
     List(UblkArgs),
     /// Recover ublk targets
-    Recover(UblkArgs),
+    Recover(RecoverArgs),
     /// Get supported features from ublk driver, supported since v6.5
     Features(UblkFeaturesArgs),
     /// GPU VRAM target specific commands

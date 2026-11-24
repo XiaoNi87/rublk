@@ -16,6 +16,7 @@ maintenance = { status = "actively-developed" }
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+libbpf-rs = { version = "=0.27.2", optional = true }
 qcow2-rs = "0.1"
 libublk = "0.4.7"
 clap = { version = "4.3", features = ["derive"] }
@@ -50,6 +51,8 @@ ctrlc = "3.4"
 default = ["vram"]
 compress = ["rocksdb", "bincode"]
 vram = ["opencl3"]
+raid5-metrics = ["raid5"]
+raid5 = ["libublk/raid5-bpf", "io-uring/raid5-bpf", "dep:libbpf-rs", "dep:libbpf-cargo"]
 
 [dev-dependencies]
 tempfile = "3.6.0"
@@ -57,5 +60,8 @@ regex = "1.8.4"
 ctor = "0.5"
 
 [patch.crates-io]
-io-uring = { git = "https://github.com/XiaoNi87/io-uring.git", rev = "18c637802eea403498c36df74ff54ff96584d795" }
 libublk = { git = "https://github.com/XiaoNi87/libublk-rs.git", rev = "7069ae7affd7dd5cbdda7fc0b903e7e4a6bff869" }
+io-uring = { git = "https://github.com/XiaoNi87/io-uring.git", rev = "18c637802eea403498c36df74ff54ff96584d795" }
+
+[build-dependencies]
+libbpf-cargo = { version = "=0.27.2", optional = true }
