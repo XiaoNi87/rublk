@@ -120,3 +120,6 @@ impl Drop for StripePermit {
         drop(self.permit.take());
     }
 }
+#[cfg(test)]
+#[path = "../../tests/raid5/stripe.rs"]
+mod tests;

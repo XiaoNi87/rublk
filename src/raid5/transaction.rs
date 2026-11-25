@@ -180,3 +180,6 @@ impl Drop for Receipt {
         self.cancel.signal();
     }
 }
+#[cfg(test)]
+#[path = "../../tests/raid5/transaction.rs"]
+mod tests;

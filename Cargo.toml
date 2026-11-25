@@ -65,3 +65,39 @@ io-uring = { git = "https://github.com/XiaoNi87/io-uring.git", rev = "18c637802e
 
 [build-dependencies]
 libbpf-cargo = { version = "=0.27.2", optional = true }
+
+[[example]]
+name = "raid5_bpf_probe"
+required-features = ["raid5"]
+
+[[example]]
+name = "raid5_kfixed_probe"
+required-features = ["raid5"]
+
+[[example]]
+name = "raid5_recovery_probe"
+required-features = ["raid5"]
+
+[[example]]
+name = "raid5_xor_probe"
+required-features = ["raid5"]
+
+[[example]]
+name = "raid5_arena_probe"
+required-features = ["raid5"]
+
+[[example]]
+name = "raid5_file_fence_probe"
+required-features = ["raid5"]
+
+[[example]]
+name = "raid5_adoption_probe"
+required-features = ["raid5"]
+
+[[example]]
+name = "raid5_coord_bench"
+required-features = ["raid5-metrics"]
+
+[[example]]
+name = "raid5_metadata_process"
+required-features = ["raid5"]

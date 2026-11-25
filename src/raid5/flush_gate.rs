@@ -161,3 +161,6 @@ impl Drop for Permit {
         self.inner.release(&self.node);
     }
 }
+#[cfg(test)]
+#[path = "../../tests/raid5/flush_gate.rs"]
+mod tests;

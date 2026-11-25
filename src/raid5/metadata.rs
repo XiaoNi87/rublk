@@ -438,3 +438,6 @@ pub fn provision<I: MetadataIo>(
     io.persist_members(&seals_to_write)?;
     Ok(generation)
 }
+#[cfg(test)]
+#[path = "../../tests/raid5/metadata.rs"]
+mod tests;

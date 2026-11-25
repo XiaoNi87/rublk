@@ -87,3 +87,6 @@ impl Geometry {
         Ok(result)
     }
 }
+#[cfg(test)]
+#[path = "../../tests/raid5/geometry.rs"]
+mod tests;

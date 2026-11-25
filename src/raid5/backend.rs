@@ -243,3 +243,6 @@ impl MetadataIo for Backends {
         Ok(())
     }
 }
+#[cfg(test)]
+#[path = "../../tests/raid5/backend.rs"]
+mod tests;

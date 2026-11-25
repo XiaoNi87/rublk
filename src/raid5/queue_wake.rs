@@ -80,3 +80,6 @@ impl futures::task::ArcWake for RingWaker {
         a.queue.signal();
     }
 }
+#[cfg(test)]
+#[path = "../../tests/raid5/queue_wake.rs"]
+mod tests;

@@ -552,3 +552,7 @@ pub async unsafe fn finalize_sync(
     }
     Ok(())
 }
+
+#[cfg(test)]
+#[path = "../../tests/raid5/engine.rs"]
+mod tests;

@@ -65,3 +65,6 @@ impl Drop for Lease<'_> {
         s.active -= 1;
     }
 }
+#[cfg(test)]
+#[path = "../../tests/raid5/sync_control.rs"]
+mod tests;

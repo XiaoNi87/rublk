@@ -95,3 +95,6 @@ impl BufferBudget {
         })
     }
 }
+#[cfg(test)]
+#[path = "../../tests/raid5/buffer.rs"]
+mod tests;

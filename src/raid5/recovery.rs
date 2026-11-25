@@ -55,3 +55,6 @@ impl Frontier {
         Ok(())
     }
 }
+#[cfg(test)]
+#[path = "../../tests/raid5/recovery.rs"]
+mod tests;
